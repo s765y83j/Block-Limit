@@ -11,7 +11,7 @@ public class McPluginMain extends JavaPlugin {
 		System.out.println("실행됨");
 
 		// 이벤트 리스너(핸들링) 등록하기
-		MyListener myLis = new MyListener();
+		MyListener myLis = new MyListener(this);
 		getServer().getPluginManager().registerEvents(myLis, this);
 
 		// 명령어처리 객체 등록

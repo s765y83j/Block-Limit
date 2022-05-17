@@ -4,13 +4,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class MyListener implements Listener {
 	/*
@@ -41,9 +44,26 @@ public class MyListener implements Listener {
 	 * 설정 = 죽음 animals.setHealth(0); } } }
 	 */
 
+	JavaPlugin plugin;
+
+	public MyListener(JavaPlugin plugin) {
+		this.plugin = plugin;
+	}
+
 	@EventHandler
-	public void onPlayerMove(PlayerMoveEvent e) {
-		Player player = e.getPlayer();
+	public void onPlayerJoin(PlayerJoinEvent e) {
+		new BukkitRunnable() {
+
+			@Override
+			public void run() {
+				// 실행할 작업
+				checkFootBlock(e.getPlayer());
+
+			}
+		}.runTaskTimer(plugin, 0, 20); // 20 = 1초
+	}
+
+	void checkFootBlock(Player player) {
 
 		// 목재 관련 블록 리스트 woods 생성, 초기화
 		List<Material> woods = new ArrayList<>(Arrays.asList(Material.OAK_LOG, Material.SPRUCE_LOG, Material.BIRCH_LOG,
@@ -241,142 +261,30 @@ public class MyListener implements Listener {
 				Material.DEAD_HORN_CORAL_BLOCK, Material.TUBE_CORAL_BLOCK, Material.DEAD_TUBE_CORAL_BLOCK));
 
 		// 마인크래프트 블록들의 리스트 생성 (단, 울타리, 상자, 작업대, 캔들 등의 블록들은 제외)
-		List<List<Material>> blocks = new ArrayList<>(Arrays.asList(woods, cobblestones, sands, granAndesDiorite,
-				deepslates, bricks, prismarines, quartzs, nethers, blackstones, endstones, purpur, dirts, concretes,
-				ores, coppers, amethystGeodes, glasses, snows, terracottas, wools, corals));
+		List<List<Material>> blockList = List.of(woods, cobblestones, sands, granAndesDiorite, deepslates, bricks,
+				prismarines, quartzs, nethers, blackstones, endstones, purpur, dirts, concretes, ores, coppers,
+				amethystGeodes, glasses, snows, terracottas, wools, corals);
 
 		// 플레이어의 바로 아래 있는 위치에 있는 블록 위치를 가져옴
 		Location loc = player.getLocation().clone().subtract(0, 1, 0);
 		Block b = loc.getBlock(); // 구한 위치에 해당하는 블록을 가져옴
 		Material footBlock = b.getType(); // 가져온 블록의 타입(Material)을 가져옴
 
-		// 플레이어가 인벤토리에서 손에 든 블록을 가져옴
-		Material meterial = player.getInventory().getItemInHand().getType();
-
-		/*
-		 * int damage = 2; if (meterial == Material.AIR) { player.setHealth(10); }
-		 * 
-		 * if (meterial == Material.DIRT || meterial == Material.GRASS_BLOCK) { if
-		 * (b.getType() != Material.DIRT && b.getType() != Material.GRASS_BLOCK &&
-		 * b.getType() != Material.AIR) { player.setHealth(player.getHealth() - damage);
-		 * } }
-		 * 
-		 * if (meterial == Material.OAK_LOG || meterial == Material.OAK_PLANKS) { if
-		 * (b.getType() != Material.OAK_LOG && b.getType() != Material.OAK_PLANKS &&
-		 * b.getType() != Material.AIR) { player.setHealth(player.getHealth() - damage);
-		 * } }
-		 * 
-		 * if (meterial == Material.STONE || meterial == Material.COBBLESTONE) { if
-		 * (b.getType() != Material.STONE && b.getType() != Material.COBBLESTONE &&
-		 * b.getType() != Material.GRANITE && b.getType() != Material.ANDESITE &&
-		 * b.getType() != Material.DIORITE && b.getType() != Material.AIR) {
-		 * player.setHealth(player.getHealth() - damage); } }
-		 */
-
 		// 플레이어가 인벤토리에서 손에 든 블록의 타입(Material)을 가져옴,
 		// rightHandBlock = 오른손, leftHandBlock = 왼손
 		Material rightHandBlock = player.getInventory().getItemInMainHand().getType();
 		Material leftHandBlock = player.getInventory().getItemInOffHand().getType();
 
-		/*
-		 * for (int i = 0; i < blocks.size(); i++) { if
-		 * (blocks.get(i).contains(rightHandBlock) ||
-		 * blocks.get(i).contains(leftHandBlock)) { if
-		 * (blocks.get(i).contains(footBlock) && footBlock != Material.AIR) {
-		 * player.setHealth(player.getHealth() - 2); } } else { player.setHealth(10); }
-		 * }
-		 */
+		int damage = 4; // 체력은 4씩 줄임 (전체 = 20)
 
-		if (blocks.get(0).contains(rightHandBlock) || blocks.get(0).contains(leftHandBlock)) {
-			if (!blocks.get(0).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
+		if (player.getGameMode() == GameMode.SURVIVAL) {
+			for (List<Material> block : blockList) {
+				if (block.contains(footBlock) && (block.contains(rightHandBlock) || block.contains(leftHandBlock))) {
+					return;
+				}
 			}
-		} else if (blocks.get(1).contains(rightHandBlock) || blocks.get(1).contains(leftHandBlock)) {
-			if (!blocks.get(1).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(2).contains(rightHandBlock) || blocks.get(2).contains(leftHandBlock)) {
-			if (!blocks.get(2).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(3).contains(rightHandBlock) || blocks.get(3).contains(leftHandBlock)) {
-			if (!blocks.get(3).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(4).contains(rightHandBlock) || blocks.get(4).contains(leftHandBlock)) {
-			if (!blocks.get(4).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(5).contains(rightHandBlock) || blocks.get(5).contains(leftHandBlock)) {
-			if (!blocks.get(5).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(6).contains(rightHandBlock) || blocks.get(6).contains(leftHandBlock)) {
-			if (!blocks.get(6).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(7).contains(rightHandBlock) || blocks.get(7).contains(leftHandBlock)) {
-			if (!blocks.get(7).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(8).contains(rightHandBlock) || blocks.get(8).contains(leftHandBlock)) {
-			if (!blocks.get(8).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(9).contains(rightHandBlock) || blocks.get(9).contains(leftHandBlock)) {
-			if (!blocks.get(9).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(10).contains(rightHandBlock) || blocks.get(10).contains(leftHandBlock)) {
-			if (!blocks.get(10).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(11).contains(rightHandBlock) || blocks.get(11).contains(leftHandBlock)) {
-			if (!blocks.get(11).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(12).contains(rightHandBlock) || blocks.get(12).contains(leftHandBlock)) {
-			if (!blocks.get(12).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(13).contains(rightHandBlock) || blocks.get(13).contains(leftHandBlock)) {
-			if (!blocks.get(13).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(14).contains(rightHandBlock) || blocks.get(14).contains(leftHandBlock)) {
-			if (!blocks.get(14).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(15).contains(rightHandBlock) || blocks.get(15).contains(leftHandBlock)) {
-			if (!blocks.get(15).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(16).contains(rightHandBlock) || blocks.get(16).contains(leftHandBlock)) {
-			if (!blocks.get(16).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(17).contains(rightHandBlock) || blocks.get(17).contains(leftHandBlock)) {
-			if (!blocks.get(17).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(18).contains(rightHandBlock) || blocks.get(18).contains(leftHandBlock)) {
-			if (!blocks.get(18).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(19).contains(rightHandBlock) || blocks.get(19).contains(leftHandBlock)) {
-			if (!blocks.get(19).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(20).contains(rightHandBlock) || blocks.get(20).contains(leftHandBlock)) {
-			if (!blocks.get(20).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else if (blocks.get(21).contains(rightHandBlock) || blocks.get(21).contains(leftHandBlock)) {
-			if (!blocks.get(21).contains(footBlock) && footBlock != Material.AIR) {
-				player.setHealth(player.getHealth() - 2);
-			}
-		} else {
-			player.setHealth(10);
+
+			player.setHealth(player.getHealth() - damage);
 		}
 
 	}
