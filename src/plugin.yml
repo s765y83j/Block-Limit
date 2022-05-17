@@ -1,0 +1,8 @@
+name: McPlugin
+main: com.wbm.mcplugin.McPluginMain
+version: 1.0
+api-version: 1.18
+
+commands:
+  mc:
+    description: mc 명령어
